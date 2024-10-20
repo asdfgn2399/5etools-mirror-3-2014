@@ -1122,8 +1122,8 @@ NavBar.InteractionManager = class {
 		const async = await StorageUtil.pGetDump();
 		const dump = {sync, async};
 		if (toFirebase) {
-			var asyncData = JSON.parse(JSON.stringify(purgeArraysIntoObjects(async, false)))
-			NavBar.userDataRef.child(localStorage.userUID + '/5etools').set({sync: purgeArraysIntoObjects(sync, false), async: asyncData, siteVersion: VERSION_NUMBER, timestamp: Date.now()})
+			var asyncData = JSON.parse(JSON.stringify(FIREBASEarraysToObjects(async, false)))
+			NavBar.userDataRef.child(localStorage.userUID + '/5etools').set({sync: FIREBASEarraysToObjects(sync, false), async: asyncData, siteVersion: VERSION_NUMBER, timestamp: Date.now()})
 			document.getElementById('navPopup').click();
 			JqueryUtil.doToast({
 				content: `Successfully saved state!`,
@@ -1140,8 +1140,8 @@ NavBar.InteractionManager = class {
 		if (isLoadedFromFirebase) {
 			await NavBar.userDataRef.child(localStorage.userUID + '/5etools').once('value', function (snapshot) {
 				NavBar.currentFirebaseData = snapshot.val()
-				NavBar.currentAsyncStateData = purgeArraysIntoObjects(NavBar.currentFirebaseData.async, true)
-				NavBar.currentSyncStateData = purgeArraysIntoObjects(NavBar.currentFirebaseData.sync, true)
+				NavBar.currentAsyncStateData = FIREBASEarraysToObjects(NavBar.currentFirebaseData.async, true)
+				NavBar.currentSyncStateData = FIREBASEarraysToObjects(NavBar.currentFirebaseData.sync, true)
 			})
 			var jsons = [{sync: NavBar.currentSyncStateData, async: NavBar.currentAsyncStateData}]
 			// let printWindow = window.open();
