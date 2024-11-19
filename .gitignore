@@ -31,3 +31,6 @@ sw-injector.js
 # API Keys
 js/config.js
 env
+
+# Dev scripts
+dev-*.sh

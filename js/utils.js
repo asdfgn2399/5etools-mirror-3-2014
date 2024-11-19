@@ -2,7 +2,7 @@
 
 // in deployment, `IS_DEPLOYED = "<version number>";` should be set below.
 globalThis.IS_DEPLOYED = undefined;
-globalThis.VERSION_NUMBER = /* 5ETOOLS_VERSION__OPEN */"1.210.10"/* 5ETOOLS_VERSION__CLOSE */;
+globalThis.VERSION_NUMBER = /* 5ETOOLS_VERSION__OPEN */"1.210.15"/* 5ETOOLS_VERSION__CLOSE */;
 globalThis.DEPLOYED_IMG_ROOT = undefined;
 // for the roll20 script to set
 globalThis.IS_VTT = false;
@@ -92,42 +92,25 @@ String.prototype.lowercaseFirst = String.prototype.lowercaseFirst || function ()
 };
 
 String.prototype.toTitleCase = String.prototype.toTitleCase || function () {
-	let str = this.replace(/([^\W_]+[^-\u2014\s/]*) */g, m0 => m0.charAt(0).toUpperCase() + m0.substring(1).toLowerCase());
+	// region Initialize regexed
+	StrUtil._TITLE_RE_INITIAL ??= /(\w+[^-\u2014\s/]*) */g;
+	StrUtil._TITLE_RE_SPLIT_PUNCT ??= /([;:?!.])/g;
+	StrUtil._TITLE_RE_POST_PUNCT ??= /^(\s*)(\S)/;
 
 	// Require space surrounded, as title-case requires a full word on either side
-	StrUtil._TITLE_LOWER_WORDS_RE = StrUtil._TITLE_LOWER_WORDS_RE || StrUtil.TITLE_LOWER_WORDS.map(it => new RegExp(`\\s${it}\\s`, "gi"));
-	StrUtil._TITLE_UPPER_WORDS_RE = StrUtil._TITLE_UPPER_WORDS_RE || StrUtil.TITLE_UPPER_WORDS.map(it => new RegExp(`\\b${it}\\b`, "g"));
-	StrUtil._TITLE_UPPER_WORDS_PLURAL_RE = StrUtil._TITLE_UPPER_WORDS_PLURAL_RE || StrUtil.TITLE_UPPER_WORDS_PLURAL.map(it => new RegExp(`\\b${it}\\b`, "g"));
+	StrUtil._TITLE_LOWER_WORDS_RE ??= RegExp(`\\s(${StrUtil.TITLE_LOWER_WORDS.join("|")})\\s`, "gi");
+	StrUtil._TITLE_UPPER_WORDS_RE ??= RegExp(`\\b(${StrUtil.TITLE_UPPER_WORDS.join("|")})\\b`, "g");
+	StrUtil._TITLE_UPPER_WORDS_PLURAL_RE ??= RegExp(`\\b(${StrUtil.TITLE_UPPER_WORDS_PLURAL.join("|")})\\b`, "g");
+	// endregion
 
-	const len = StrUtil.TITLE_LOWER_WORDS.length;
-	for (let i = 0; i < len; i++) {
-		str = str.replace(
-			StrUtil._TITLE_LOWER_WORDS_RE[i],
-			txt => txt.toLowerCase(),
-		);
-	}
-
-	const len1 = StrUtil.TITLE_UPPER_WORDS.length;
-	for (let i = 0; i < len1; i++) {
-		str = str.replace(
-			StrUtil._TITLE_UPPER_WORDS_RE[i],
-			StrUtil.TITLE_UPPER_WORDS[i].toUpperCase(),
-		);
-	}
-
-	for (let i = 0; i < len1; i++) {
-		str = str.replace(
-			StrUtil._TITLE_UPPER_WORDS_PLURAL_RE[i],
-			`${StrUtil.TITLE_UPPER_WORDS_PLURAL[i].slice(0, -1).toUpperCase()}${StrUtil.TITLE_UPPER_WORDS_PLURAL[i].slice(-1).toLowerCase()}`,
-		);
-	}
-
-	str = str
-		.split(/([;:?!.])/g)
-		.map(pt => pt.replace(/^(\s*)([^\s])/, (...m) => `${m[1]}${m[2].toUpperCase()}`))
+	return this
+		.replace(StrUtil._TITLE_RE_INITIAL, m0 => m0.charAt(0).toUpperCase() + m0.substring(1).toLowerCase())
+		.replace(StrUtil._TITLE_LOWER_WORDS_RE, (...m) => m[0].toLowerCase())
+		.replace(StrUtil._TITLE_UPPER_WORDS_RE, (...m) => m[0].toUpperCase())
+		.replace(StrUtil._TITLE_UPPER_WORDS_PLURAL_RE, (...m) => `${m[0].slice(0, -1).toUpperCase()}${m[0].slice(-1).toLowerCase()}`)
+		.split(StrUtil._TITLE_RE_SPLIT_PUNCT)
+		.map(pt => pt.replace(StrUtil._TITLE_RE_POST_PUNCT, (...m) => `${m[1]}${m[2].toUpperCase()}`))
 		.join("");
-
-	return str;
 };
 
 String.prototype.toSentenceCase = String.prototype.toSentenceCase || function () {
@@ -311,7 +294,7 @@ globalThis.StrUtil = {
 	TITLE_LOWER_WORDS: ["a", "an", "the", "and", "but", "or", "for", "nor", "as", "at", "by", "for", "from", "in", "into", "near", "of", "on", "onto", "to", "with", "over", "von", "between", "per"],
 	// Certain words such as initialisms or acronyms should be left uppercase
 	TITLE_UPPER_WORDS: ["Id", "Tv", "Dm", "Ok", "Npc", "Pc", "Tpk", "Wip", "Dc", "D&d"],
-	TITLE_UPPER_WORDS_PLURAL: ["Ids", "Tvs", "Dms", "Oks", "Npcs", "Pcs", "Tpks", "Wips", "Dcs", "D&d"], // (Manually pluralize, to avoid infinite loop)
+	TITLE_UPPER_WORDS_PLURAL: ["Ids", "Tvs", "Dms", "Oks", "Npcs", "Pcs", "Tpks", "Wips", "Dcs"], // (Manually pluralize, to avoid infinite loop)
 
 	IRREGULAR_PLURAL_WORDS: {
 		"cactus": "cacti",
@@ -321,6 +304,7 @@ globalThis.StrUtil = {
 		"dwarf": "dwarves",
 		"efreeti": "efreet",
 		"elf": "elves",
+		"erinyes": "erinyes",
 		"fey": "fey",
 		"foot": "feet",
 		"goose": "geese",
@@ -825,12 +809,13 @@ class TemplateUtil {
 
 			const eles = [];
 			let ixArg = 0;
-			const ixEnd = parts.length - 1;
 
 			const raw = parts
 				.reduce((html, p, ix) => {
-					if (ix === 0) html = html.trimStart();
-					if (ix === ixEnd) html = html.trimEnd();
+					// Initial `.reduce` `ix` is 1
+					if (ix === 1) html = html.trimStart();
+					// ...and final `ix` is actually-final-index + 1
+					if (ix === parts.length) html = html.trimEnd();
 
 					const myIxArg = ixArg++;
 					if (args[myIxArg] == null) return `${html}${p}`;
@@ -841,8 +826,6 @@ class TemplateUtil {
 			const eleTmpTemplate = document.createElement("template");
 			eleTmpTemplate.innerHTML = raw.trim();
 			const {content: eleTmp} = eleTmpTemplate;
-
-			// debugger
 
 			Array.from(eleTmp.querySelectorAll(`[data-r="true"]`))
 				.forEach((node, i) => node.replaceWith(eles[i]));
@@ -1953,7 +1936,7 @@ globalThis.MiscUtil = class {
 		return new Promise(resolve => setTimeout(() => resolve(resolveAs), msecs));
 	}
 
-	static GENERIC_WALKER_ENTRIES_KEY_BLOCKLIST = new Set(["caption", "type", "colLabels", "colLabelGroups", "name", "colStyles", "style", "shortName", "subclassShortName", "id", "path", "source"]);
+	static GENERIC_WALKER_ENTRIES_KEY_BLOCKLIST = new Set(["caption", "type", "colLabels", "colLabelRows", "name", "colStyles", "style", "shortName", "subclassShortName", "id", "path", "source"]);
 
 	/**
 	 * @param [opts]
@@ -3556,7 +3539,8 @@ globalThis.SortUtil = {
 	listSort (a, b, opts) {
 		opts = opts || {sortBy: "name"};
 		if (opts.sortBy === "name") return SortUtil.compareListNames(a, b);
-		else return SortUtil._compareByOrDefault_compareByOrDefault(a, b, opts.sortBy);
+		if (opts.sortBy === "source") return SortUtil._listSort_compareBy(a, b, opts.sortBy) || SortUtil._listSort_compareBy(a, b, "page") || SortUtil.compareListNames(a, b);
+		return SortUtil._compareByOrDefault_compareByOrDefault(a, b, opts.sortBy);
 	},
 
 	_listSort_compareBy (a, b, sortBy) {
@@ -3720,7 +3704,7 @@ globalThis.SortUtil = {
 	},
 
 	ascSortGenericEntity (a, b) {
-		return SortUtil.ascSortLower(a.name, b.name) || SortUtil.ascSortLower(a.source, b.source);
+		return SortUtil.ascSortLower(a.name || "", b.name || "") || SortUtil.ascSortLower(a.source || "", b.source || "");
 	},
 
 	ascSortDeity (a, b) {
@@ -4408,11 +4392,13 @@ globalThis.DataUtil = {
 			].join("|").replace(/\|+$/, ""); // Trim trailing pipes
 		},
 
-		getUid (ent, {isMaintainCase = false} = {}) {
+		getUid (ent, {isMaintainCase = false, displayName = null} = {}) {
 			const {name} = ent;
 			const source = SourceUtil.getEntitySource(ent);
 			if (!name || !source) throw new Error(`Entity did not have a name and source!`);
-			const out = [name, source].join("|");
+			const pts = [name, source];
+			if (displayName) pts.push(displayName);
+			const out = pts.join("|");
 			if (isMaintainCase) return out;
 			return out.toLowerCase();
 		},
@@ -4936,6 +4922,14 @@ globalThis.DataUtil = {
 				MiscUtil.set(copyTo, ...propPath, MiscUtil.copyFast(modInfo.value));
 			}
 
+			static _doMod_prefixSuffixStringProp ({copyTo, copyFrom, modInfo, msgPtFailed, prop}) {
+				const propPath = modInfo.prop.split(".");
+				if (prop != null && prop !== "*") propPath.unshift(prop);
+				const str = MiscUtil.get(copyTo, ...propPath);
+				if (str == null || !(typeof str === "string")) return;
+				MiscUtil.set(copyTo, ...propPath, `${modInfo.prefix || ""}${str}${modInfo.suffix || ""}`);
+			}
+
 			static _doMod_handleProp ({copyTo, copyFrom, modInfos, msgPtFailed, prop = null}) {
 				modInfos.forEach(modInfo => {
 					if (typeof modInfo === "string") {
@@ -4960,6 +4954,7 @@ globalThis.DataUtil = {
 							case "scalarAddProp": return this._doMod_scalarAddProp({copyTo, copyFrom, modInfo, msgPtFailed, prop});
 							case "scalarMultProp": return this._doMod_scalarMultProp({copyTo, copyFrom, modInfo, msgPtFailed, prop});
 							case "setProp": return this._doMod_setProp({copyTo, copyFrom, modInfo, msgPtFailed, prop});
+							case "prefixSuffixStringProp": return this._doMod_prefixSuffixStringProp({copyTo, copyFrom, modInfo, msgPtFailed, prop});
 							// region Bestiary specific
 							case "addSenses": return this._doMod_addSenses({copyTo, copyFrom, modInfo, msgPtFailed});
 							case "addSaves": return this._doMod_addSaves({copyTo, copyFrom, modInfo, msgPtFailed});
@@ -5862,12 +5857,13 @@ globalThis.DataUtil = {
 			};
 		}
 
-		static getUid (ent, {isMaintainCase = false, isRetainDefault = false} = {}) {
+		static getUid (ent, {isMaintainCase = false, displayName = null, isRetainDefault = false} = {}) {
 			// <abbreviation>|<source>
 			const sourceDefault = Parser.SRC_PHB;
 			const out = [
 				ent.abbreviation,
 				!isRetainDefault && (ent.source || "").toLowerCase() === sourceDefault.toLowerCase() ? "" : ent.source,
+				displayName || "",
 			].join("|").replace(/\|+$/, ""); // Trim trailing pipes
 			if (isMaintainCase) return out;
 			return out.toLowerCase();
@@ -5893,12 +5889,13 @@ globalThis.DataUtil = {
 			};
 		}
 
-		static getUid (ent, {isMaintainCase = false, isRetainDefault = false} = {}) {
+		static getUid (ent, {isMaintainCase = false, displayName = null, isRetainDefault = false} = {}) {
 			// <abbreviation>|<source>
 			const sourceDefault = Parser.SRC_PHB;
 			const out = [
 				ent.abbreviation,
 				!isRetainDefault && (ent.source || "").toLowerCase() === sourceDefault.toLowerCase() ? "" : ent.source,
+				displayName || "",
 			].join("|").replace(/\|+$/, ""); // Trim trailing pipes
 			if (isMaintainCase) return out;
 			return out.toLowerCase();
@@ -6158,14 +6155,15 @@ globalThis.DataUtil = {
 			};
 		}
 
-		static packUidSubclass (ent, {isMaintainCase = false} = {}) {
+		static packUidSubclass (ent, {isMaintainCase = false, displayName = null} = {}) {
 			// <shortName>|<className>|<classSource>|<source>
 			const sourceDefault = Parser.getTagSource("class");
 			const out = [
-				ent.shortName,
+				ent.shortName || ent.name,
 				ent.className,
 				(ent.classSource || "").toLowerCase() === sourceDefault.toLowerCase() ? "" : ent.classSource,
 				(ent.source || "").toLowerCase() === sourceDefault.toLowerCase() ? "" : ent.source,
+				displayName || "",
 			].join("|").replace(/\|+$/, ""); // Trim trailing pipes
 			if (isMaintainCase) return out;
 			return out.toLowerCase();
@@ -6313,9 +6311,9 @@ globalThis.DataUtil = {
 			return DataUtil.class.unpackUidSubclass(uid, opts);
 		}
 
-		static getUid (ent, {isMaintainCase = false} = {}) {
+		static getUid (ent, {isMaintainCase = false, displayName = null} = {}) {
 			// <shortName>|<className>|<classSource>|<source>
-			return DataUtil.class.packUidSubclass(ent, {isMaintainCase});
+			return DataUtil.class.packUidSubclass(ent, {isMaintainCase, displayName});
 		}
 	},
 
@@ -6360,7 +6358,7 @@ globalThis.DataUtil = {
 						const newer = inSource[laterSrc][name];
 						if (newer) {
 							const old = inSource[src][name];
-							old.reprinted = true;
+							old.isReprinted = true;
 							if (!newer._isEnhanced) {
 								newer.previousVersions = newer.previousVersions || [];
 								newer.previousVersions.push(old);
@@ -6410,14 +6408,17 @@ globalThis.DataUtil = {
 			};
 		}
 
-		static packUidDeity (it) {
+		static packUidDeity (it, {isMaintainCase = false, displayName = null} = {}) {
 			// <name>|<pantheon>|<source>
 			const sourceDefault = Parser.getTagSource("deity");
-			return [
+			const out = [
 				it.name,
 				(it.pantheon || "").toLowerCase() === "forgotten realms" ? "" : it.pantheon,
 				(it.source || "").toLowerCase() === sourceDefault.toLowerCase() ? "" : it.source,
+				displayName || "",
 			].join("|").replace(/\|+$/, ""); // Trim trailing pipes
+			if (isMaintainCase) return out;
+			return out.toLowerCase();
 		}
 	},
 
@@ -6651,6 +6652,8 @@ globalThis.RollerUtil = {
 	},
 
 	getFullRollCol (lbl) {
+		if (typeof lbl !== "string") return lbl;
+
 		if (lbl.includes("@dice")) return lbl;
 
 		if (Renderer.dice.lang.getTree3(lbl)) return `{@dice ${lbl}}`;

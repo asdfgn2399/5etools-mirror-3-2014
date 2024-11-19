@@ -2804,5 +2804,30 @@
 		"ver": "1.210.10",
 		"date": "2024-10-17",
 		"txt": "- Added \"Zoom to Fit\" button to Dynamic Map Viewer; made \"Reset Zoom\" button reset to \"fill\" size (rather than 100% zoom)\n- Adjusted Dynamic Map Viewer zoom in/out amount to feel more natural\n- Added Languages support to Blocklist\n- Added \"Camouflage\" tag to Bestiary \"Traits\" filter\n- Converted Items page \"Base Item\" filter to searchable type\n- Fixed common cases of Dynamic Map Viewer \"white screen\" when zooming in too far on some images\n- Fixed Classes page \"Toggle Spell Points Mode\" option producing broken results when used on a non-spellcasting class with spellcasting subclasses (e.g. Fighter; Rogue)\n- Fixed duplicate filter matches producing incorrect filter results in some cases\n- (Brew) Improved speed of loading many brews from a prerelease content/homebrew list exported as url\n- (Brew) Added file verification/warning when attempting to upload a non-homebrew file (e.g. a file from \"Utilities\" -> \"Export State to File\") as a homebrew file\n- (Brew) Added redirect when pasting a prerelease content/homebrew list exported as url into the \"Load from URL\" modal\n- (Brew) Added numeric-prefix sorting to list page \"Source\" filters\n- (Brew) Added support for `\"itemProperty\"` tag in `\"statblock\"` entries\n- (Brew) Fixed crash when using `_append<fluffProp>`\n- (Fixed typos/added tags)"
+	},
+	{
+		"ver": "1.210.11",
+		"date": "2024-10-24",
+		"txt": "- Added Armor Class filter to Items page\n- Improved Spell-Summoned Creature Scaler handling of multiattacks\n- Fixed Classes page \"Toggle Spell Points Mode\" option only showing subclass spell points columns\n- (Fixed typos/added tags)"
+	},
+	{
+		"ver": "1.210.12",
+		"date": "2024-10-31",
+		"txt": "- Added page numbers to Quests from the Infinite Staircase adventure content\n- Added Bestiary \"Named Creature\" filter\n- Fixed \"Export as Image\" window resize behaviour on Firefox\n- Fixed \"Source\" filter item ordering\n- (Brew) Added `\"_versions\"` support to `\"feat\"`s, which may subsequently be linked from `\"background[].feats\"`\n- (Fixed typos/added tags)"
+	},
+	{
+		"ver": "1.210.13",
+		"date": "2024-11-04",
+		"txt": "- Fixed Items page failing to render range for items with range but no ammunition\n- Fixed Bestiary failing to render \"mythic encounter\" XP\n- (Fixed typos/added tags)"
+	},
+	{
+		"ver": "1.210.14",
+		"date": "2024-11-18",
+		"txt": "- Improved loading performance of various pages _[some more than others; the items page got a 300ms speedup on my machine]_\n- Sorting a list page by \"Source\" now uses sorts by \"source\" -> \"page\" -> \"name\", rather than \"source\" -> \"name\"\n- The Classes page \"Show Subclass Sources\" option is now enabled by default\n- Switched to transparent background for 600+ Bestiary images (thanks @ anon)\n- Fixed Vehicles page tokens persisting when changing statblock\n- (Brew) Added `\"itemsHidden\"` on `\"itemGroup\"`s, allowing the \"Multiple variations of this item exist ...\" text to be hidden\n- (Brew) Fixed \"Export Prerelease Content/Homebrew List as URL\" always exporting a blank URL\n- (Fixed typos/added tags)"
+	},
+	{
+		"ver": "1.210.15",
+		"date": "2024-11-18",
+		"txt": "(Fixed typos/added tags)"
 	}
 ]
