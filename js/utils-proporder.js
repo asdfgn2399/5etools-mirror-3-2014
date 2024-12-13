@@ -348,6 +348,7 @@ PropOrder._META = [
 
 	"spellSchools",
 	"spellDistanceUnits",
+	"featCategories",
 	"optionalFeatureTypes",
 	"psionicTypes",
 	"currencyConversions",
@@ -457,6 +458,7 @@ PropOrder._MONSTER = [
 
 	"save",
 	"skill",
+	"tool",
 	"senses",
 	"passive",
 	"resist",
@@ -1570,6 +1572,7 @@ PropOrder._FEAT = [
 
 	"additionalSpells",
 
+	"featProgression",
 	"optionalfeatureProgression",
 
 	"entries",
@@ -2231,6 +2234,8 @@ PropOrder._RACE_SUBRACE = [
 	"conditionImmune",
 
 	"soundClip",
+
+	"startingEquipment",
 
 	"additionalSpells",
 
